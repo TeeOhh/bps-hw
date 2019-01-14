@@ -14,11 +14,22 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun multi-fetch (patterns)
-  ;need to pass bindings to each successive call
-  ;fetch doesn't return bindings
-  ;dolist over patterns calling (fetch pattern bindings)
-  (mapcan #'(lambda (pattern) (fetch pattern)) patterns))
+(defun multi-fetch (patterns &optional unifiers)
+  ;based on last bindings, (sublis bindings (car pattern))
+  ;unify on pattern replaced by sublis above
+  ;ex: bindings: (x . Turing) (unify (human Turing) some_assertion)
+  (dolist (candidate (get-candidates pattern tre) unifiers)
+    (setq bindings (unify pattern candidate bindings))
+    (unless (eq bindings :fail)
+      (multi-fetch (cdr patterns) (sublis bindings pattern)))))
+
+
+(defun fetch (pattern &optional (tre *tre*) &aux bindings unifiers)
+  "Returns the list of facts which unify with the pattern."
+  (dolist (candidate (get-candidates pattern tre) unifiers)
+    (setq bindings (unify pattern candidate))
+    (unless (eq bindings :fail)
+      (push (sublis bindings pattern) unifiers))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; End of Code
