@@ -14,15 +14,20 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun multi-fetch (patterns &optional unifiers)
-  ;based on last bindings, (sublis bindings (car pattern))
-  ;unify on pattern replaced by sublis above
-  ;ex: bindings: (x . Turing) (unify (human Turing) some_assertion)
-  (dolist (candidate (get-candidates pattern tre) unifiers)
-    (setq bindings (unify pattern candidate bindings))
-    (unless (eq bindings :fail)
-      (multi-fetch (cdr patterns) (sublis bindings pattern)))))
+;((human socrates) (implies (human socrates) (mortal socrates)) (mortal socrates))
+;((human socrates) (implies (human socrates) (mammal socrates)) (mortal socrates))
 
+(defun multi-fetch (patterns &aux bindings unifiers)
+  (dolist (pattern patterns
+                   (let ((bindings-temp '()))
+                     (dolist (candidate (get-candidates pattern tre) unifiers)
+                       (dolist (binding bindings something)
+                         ;maybe replace binding in bindings?
+                         (setq binding (unify pattern candidate binding))
+                         (unless (eq binding :fail)
+                           (append binding bindings-temp)))
+                         ;at the end of iteration, setq bindings to bindings-temp list
+                         (push (sublis bindings-temp pattern) unifiers)))))))
 
 (defun fetch (pattern &optional (tre *tre*) &aux bindings unifiers)
   "Returns the list of facts which unify with the pattern."
