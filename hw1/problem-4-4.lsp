@@ -14,22 +14,6 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;for pattern in patterns
-;for candidate in candidates
-;for each consistent binding set, binding set = (unify pattern candidate binding)
-;;;(defun multi-fetch (patterns &optional (tre *tre*) &aux bindings unifiers)
-;;;  (do* ((pattern-tracker patterns (cdr pattern-tracker))
-;;;       (temp-bindings '(nil) '(nil)))
-;;;      ((null pattern-tracker) (make-unifiers patterns bindings))
-;;;    (dolist (candidate (get-candidates (car pattern-tracker) tre))
-;;;      (do* ((binding-tracker bindings (cdr binding-tracker))
-;;;            (temp-binding :fail (unify (car pattern-tracker) candidate (car binding-tracker))))
-;;;           ((null binding-tracker) (setq bindings temp-bindings))
-;;;        (unless (eq temp-binding :fail)
-;;;          (append temp-binding temp-bindings))))
-;;;    (print temp-bindings)
-;;;    (setq bindings temp-bindings)))
-
 (defun multi-fetch (patterns &optional (tre *tre*) (consis-bindings '(nil)) &aux bindings)
   (do* ((pattern-tracker patterns (cdr pattern-tracker))
        (cur-pattern (car pattern-tracker) (car pattern-tracker))
