@@ -14,27 +14,41 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;((human socrates) (implies (human socrates) (mortal socrates)) (mortal socrates))
-;((human socrates) (implies (human socrates) (mammal socrates)) (mortal socrates))
+;for pattern in patterns
+;for candidate in candidates
+;for each consistent binding set, binding set = (unify pattern candidate binding)
+;;;(defun multi-fetch (patterns &optional (tre *tre*) &aux bindings unifiers)
+;;;  (do* ((pattern-tracker patterns (cdr pattern-tracker))
+;;;       (temp-bindings '(nil) '(nil)))
+;;;      ((null pattern-tracker) (make-unifiers patterns bindings))
+;;;    (dolist (candidate (get-candidates (car pattern-tracker) tre))
+;;;      (do* ((binding-tracker bindings (cdr binding-tracker))
+;;;            (temp-binding :fail (unify (car pattern-tracker) candidate (car binding-tracker))))
+;;;           ((null binding-tracker) (setq bindings temp-bindings))
+;;;        (unless (eq temp-binding :fail)
+;;;          (append temp-binding temp-bindings))))
+;;;    (print temp-bindings)
+;;;    (setq bindings temp-bindings)))
 
-(defun multi-fetch (patterns &aux bindings unifiers)
-  (dolist (pattern patterns
-                   (let ((bindings-temp '()))
-                     (dolist (candidate (get-candidates pattern tre) unifiers)
-                       (dolist (binding bindings something)
-                         ;maybe replace binding in bindings?
-                         (setq binding (unify pattern candidate binding))
-                         (unless (eq binding :fail)
-                           (append binding bindings-temp)))
-                         ;at the end of iteration, setq bindings to bindings-temp list
-                         (push (sublis bindings-temp pattern) unifiers)))))))
+(defun multi-fetch (patterns &optional (tre *tre*) (consis-bindings '(nil)) &aux bindings)
+  (do* ((pattern-tracker patterns (cdr pattern-tracker))
+       (cur-pattern (car pattern-tracker) (car pattern-tracker))
+       (temp-binding '() '()))
+      ((null pattern-tracker) (make-unifiers patterns consis-bindings))
+    (dolist (candidate (get-candidates cur-pattern tre))
+      (dolist (consis-binding consis-bindings)
+        (setq bindings (unify cur-pattern candidate consis-binding))
+        (unless (eq bindings :fail)
+          (setq temp-binding (append (list bindings) temp-binding)))))
+    (setq consis-bindings temp-binding)))
 
-(defun fetch (pattern &optional (tre *tre*) &aux bindings unifiers)
-  "Returns the list of facts which unify with the pattern."
-  (dolist (candidate (get-candidates pattern tre) unifiers)
-    (setq bindings (unify pattern candidate))
-    (unless (eq bindings :fail)
-      (push (sublis bindings pattern) unifiers))))
+
+(defun make-unifiers (patterns bindings-set &aux unifiers)
+  (mapcar #'(lambda (bindings)
+              (sublis bindings patterns))
+    bindings-set))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; End of Code
