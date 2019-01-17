@@ -1,6 +1,6 @@
 ;;;; -*-  Mode: LISP; Syntax: Common-Lisp; Base: 10                          -*-
 ;;;; ---------------------------------------------------------------------------
-;;;; File name: problem-4-6
+;;;; File name: problem-4-6.lsp
 ;;;;    System: 
 ;;;;    Author: Taylor Olson
 ;;;;   Created: January 13, 2019 12:53:47
@@ -12,23 +12,24 @@
 
 (in-package :cl-user)
 
-
+;Assumes a does not depend on b
+;(there doesn't exist a rule that show b, gives us a)
+;Example rule: show cloudy sky gives us blue sky
+;and fetching (show (and (blue sky) (cloudy Sky))
+;we don't have blue sky explicitly so it will fail before checking cloudy
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; They both assume that ?a and ?b being equal should result in True?
 (rule (show (and ?a ?b))
-      (assert! '(show ,?a))
-      (assert! '(show ,?b))
-      ;stop if ?a not found
-      (rule ?a (rule ?b (assert! '(and ,?b)))))
+      (assert! `(show ,?a))
+      (rule ?a
+            (assert! `(show ,?b))
+            (rule ?b (assert! `(and ,?a ,?b)))))
 
 (rule (show (iff ?a ?b))
-      (assert! '(show (implies ,?a ,?b)))
-      (assert! '(show (implies ,?b ,?a)))
-      ;stop if (implies ?a ?b) not found
-      ;(and (implies ?a ?b) (implies ?b ?a))
+      (assert! `(show (implies ,?a ,?b)))
       (rule (implies ?a ?b)
+            (assert! `(show (implies ,?b ,?a)))
             (rule (implies ?b ?a)
-                  (assert! '(iff ,?a ,?b)))))
+                  (assert! `(iff ,?a ,?b)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
