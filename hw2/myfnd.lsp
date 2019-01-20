@@ -15,16 +15,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; premise and goal rules
 
+;true if x is an assumption of problem
 (rule ((premise ?x) :test (not (fetch ?x)))
-       (rassert! ?x))
+      ;maybe (rassert! (premise ?x))
+      (rassert! ?x))
 
-(rule ((goal ?x) (show ?x))
-      (rassert! (goal ?x)))
+;true if x's proof is goal of problem
+(rule ((goal ?x))
+      (rassert! (show ?x))
+      (rule ((goal ?y) ?y)
+            (rassert! (goal ?x))))
 
-(defun solved? (ftre)
-  ;assert premise of all x that are assumed
-  ;go until goal reached
-  )
+(defun solved? (ftre problem)
+  (run-forms ftre (transform-statement problem)))
+
+(defun transform-statement (problem)
+  (mapcan #'(lambda (assertion)
+             (cond ((eq (car assertion) 'show)
+                    (cons 'goal (cdr assertion)))
+                   (t (cons 'premise assertion))))
+          problem-statement))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; First, some utilities:
