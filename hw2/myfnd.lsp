@@ -16,7 +16,7 @@
 ;; premise and goal rules
 
 ;true if x is an assumption of problem
-(rule ((premise ?x) :test (not (fetch ?x)))
+(rule ((premise ?x))
       ;maybe (rassert! (premise ?x))
       (rassert! ?x))
 
@@ -27,14 +27,16 @@
             (rassert! (goal ?x))))
 
 (defun solved? (ftre problem)
-  (run-forms ftre (transform-statement problem)))
+  (run-forms ftre problem)
+  ;will this be true no matter what since (goal something) is asserted in problem statement?
+  (if (fetch '(goal ?x) "Problem Solved")))
 
 (defun transform-statement (problem)
-  (mapcan #'(lambda (assertion)
-             (cond ((eq (car assertion) 'show)
-                    (cons 'goal (cdr assertion)))
-                   (t (cons 'premise assertion))))
-          problem-statement))
+  (mapcar #'(lambda (assertion)
+             (cond ((eq (caadar (cdr assertion)) 'show)
+                    (cons (car assertion) (list (cons 'goal (cdr (cadadr assertion))))))
+                   (t (cons (car assertion) (list (cons 'premise (cdadr assertion)))))))
+          problem))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; First, some utilities:
