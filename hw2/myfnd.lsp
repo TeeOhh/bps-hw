@@ -16,27 +16,48 @@
 ;; premise and goal rules
 
 ;true if x is an assumption of problem
+;distinguish between assumptions and things that were derived/
 (rule ((premise ?x))
-      ;maybe (rassert! (premise ?x))
       (rassert! ?x))
 
 ;true if x's proof is goal of problem
 (rule ((goal ?x))
-      (rassert! (show ?x))
-      (rule ((goal ?y) ?y)
-            (rassert! (goal ?x))))
+      (rassert! (show ?x)))
 
 (defun solved? (ftre problem)
   (run-forms ftre problem)
-  ;will this be true no matter what since (goal something) is asserted in problem statement?
-  (if (fetch '(goal ?x) "Problem Solved")))
+  (if (fetch '(goal ?x)) "Problem Solved")
+  ;(if (multi-fetch '((goal ?x) ?x) ftre) "Problem Solved")
+  ;get bindings from (goal ?x)
+  ;if (fetch ?x ftre bindings) "Problem Solved"
+  )
 
 (defun transform-statement (problem)
   (mapcar #'(lambda (assertion)
              (cond ((eq (caadar (cdr assertion)) 'show)
                     (cons (car assertion) (list (cons 'goal (cdr (cadadr assertion))))))
                    (t (cons (car assertion) (list (cons 'premise (cdadr assertion)))))))
-          problem))
+    problem))
+
+(defun multi-fetch (patterns &optional (ftre *ftre*) (consis-bindings '(nil)) &aux bindings)
+  (do* ((pattern-tracker patterns (cdr pattern-tracker))
+       (cur-pattern (car pattern-tracker) (car pattern-tracker))
+       (temp-binding '() '()))
+      ((null pattern-tracker) (make-unifiers patterns consis-bindings))
+    (dolist (candidate (get-candidates cur-pattern tre))
+      (dolist (consis-binding consis-bindings)
+        (setq bindings (unify cur-pattern candidate consis-binding))
+        (unless (eq bindings :fail)
+          (setq temp-binding (append (list bindings) temp-binding)))))
+    (setq consis-bindings temp-binding)))
+
+
+(defun make-unifiers (patterns bindings-set &aux unifiers)
+  (mapcar #'(lambda (bindings)
+              (sublis bindings patterns))
+    bindings-set))
+
+ 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; First, some utilities:
