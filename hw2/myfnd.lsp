@@ -11,53 +11,43 @@
 ;;;; ---------------------------------------------------------------------------
 
 (in-package :cl-user)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 18a. All but ex7 and ex8 solved.
+;;     ex1: 18 rules, 7 assertions
+;;     ex2: 19 rules, 7 assertions
+;;     ex3: 20 rules, 13 assertions
+;;     ex4: 23 rules, 9 assertions
+;;     ex5: 19 rules, 7 assertions
+;;     ex6: 20 rules, 12 assertions
+;;     ex7: 30 rules, 15 assertions
+;;     ex8: 17 rules, 2 assertions
+;;     ex9: 45 rules, 24 assertions
+;; 
+;; 18b.
+;;    ex7: (implies (or P J) (and M C)) doesn't correctly find J.
+;;         I believe this is due to the 'iff' rule. It doesn't assert show for each antecedent.
+;;         Either when the split and assertions happen each doesn't get dealt with properly, or
+;;         for this problem it may have something to do with matching variable bindings.
+;;         For there's already a (show C), (show J), (show M), (show P). Changing iff to
+;;         assert show for each antecedent works but increases num of rules and assertions ran.
+;;
+;;    ex8: No assertions, nothing is known, simply a show statement.
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; premise and goal rules
 
-;true if x is an assumption of problem
-;distinguish between assumptions and things that were derived/
+
 (rule ((premise ?x))
       (rassert! ?x))
 
-;true if x's proof is goal of problem
 (rule ((goal ?x))
       (rassert! (show ?x)))
 
 (defun solved? (ftre problem)
   (run-forms ftre problem)
-  (if (fetch '(goal ?x)) "Problem Solved")
-  ;(if (multi-fetch '((goal ?x) ?x) ftre) "Problem Solved")
-  ;get bindings from (goal ?x)
-  ;if (fetch ?x ftre bindings) "Problem Solved"
-  )
-
-(defun transform-statement (problem)
-  (mapcar #'(lambda (assertion)
-             (cond ((eq (caadar (cdr assertion)) 'show)
-                    (cons (car assertion) (list (cons 'goal (cdr (cadadr assertion))))))
-                   (t (cons (car assertion) (list (cons 'premise (cdadr assertion)))))))
-    problem))
-
-(defun multi-fetch (patterns &optional (ftre *ftre*) (consis-bindings '(nil)) &aux bindings)
-  (do* ((pattern-tracker patterns (cdr pattern-tracker))
-       (cur-pattern (car pattern-tracker) (car pattern-tracker))
-       (temp-binding '() '()))
-      ((null pattern-tracker) (make-unifiers patterns consis-bindings))
-    (dolist (candidate (get-candidates cur-pattern tre))
-      (dolist (consis-binding consis-bindings)
-        (setq bindings (unify cur-pattern candidate consis-binding))
-        (unless (eq bindings :fail)
-          (setq temp-binding (append (list bindings) temp-binding)))))
-    (setq consis-bindings temp-binding)))
-
-
-(defun make-unifiers (patterns bindings-set &aux unifiers)
-  (mapcar #'(lambda (bindings)
-              (sublis bindings patterns))
-    bindings-set))
-
- 
+  (let ((binding-sublis (cadar (fetch '(goal ?x) ftre))))
+    (if (fetch binding-sublis) binding-sublis)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; First, some utilities:
@@ -123,8 +113,10 @@
     (debug-nd "~%~D: BE: ~A~%~D: BE: ~A"
       (ftre-depth *ftre*) `(implies ,?p ,?q)
       (ftre-depth *ftre*) `(implies ,?q ,?p))
-    (rassert! (implies ?p ?q))
-    (rassert! (implies ?q ?p)))
+      (rassert! (implies ?p ?q))
+      (rassert! (implies ?q ?p))
+      (rassert! (show ?p))
+      (rassert! (show ?q)))
 
 (rule ((show (iff ?p ?q)) ;IFF introduction
        :test (not (fetch `(iff ,?p ,?q))))
@@ -209,3 +201,4 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; End of Code
+
