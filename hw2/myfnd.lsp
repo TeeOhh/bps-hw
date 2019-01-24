@@ -73,10 +73,6 @@
       (debug-nd "~%~D: CE: ~A" (ftre-depth *ftre*) ?q)
       (rassert! ?q))
 
-;; conditional equivalence
-(rule ((implies ?p ?q) :test (not (fetch `(or (not ,?p) ,?q))))
-      (rassert! (or (not ?p) ?q)))
-
 (rule ((show ?q) ;; backward chaining.
        :test (not (fetch ?q))
        (implies ?p ?q))
@@ -112,7 +108,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Biconditional elimination and introduction
-
+;may have to check if these are in before asserting?
 (rule ((iff ?p ?q)) ;; IFF elimination
     (debug-nd "~%~D: BE: ~A~%~D: BE: ~A"
       (ftre-depth *ftre*) `(implies ,?p ,?q)
