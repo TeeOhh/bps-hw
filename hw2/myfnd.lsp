@@ -73,6 +73,10 @@
       (debug-nd "~%~D: CE: ~A" (ftre-depth *ftre*) ?q)
       (rassert! ?q))
 
+;; conditional equivalence
+(rule ((implies ?p ?q) :test (not (fetch `(or (not ,?p) ,?q))))
+      (rassert! (or (not ?p) ?q)))
+
 (rule ((show ?q) ;; backward chaining.
        :test (not (fetch ?q))
        (implies ?p ?q))
