@@ -126,7 +126,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Biconditional elimination and introduction
-;may have to check if these are in before asserting?
+
 (rule ((iff ?p ?q)) ;; IFF elimination
     (debug-nd "~%~D: BE: ~A~%~D: BE: ~A"
               (ftre-depth *ftre*) `(implies ,?p ,?q)
