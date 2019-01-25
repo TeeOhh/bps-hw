@@ -29,9 +29,18 @@
 ;;         Either when the split and assertions happen each doesn't get dealt with properly, or
 ;;         for this problem it may have something to do with matching variable bindings.
 ;;         For there's already a (show C), (show J), (show M), (show P). Changing iff to
-;;         assert show for each antecedent works but increases num of rules and assertions ran.
+;;         assert show for each antecedent works but increases cons's needed.
 ;;
-;;    ex8: No assertions, nothing is known, simply a show statement.
+;;    ex8: No assertions, nothing is known, simply a show statement. The set of rules does not
+;;         contain logical equivalents either. So there's no way of mapping/matching (imp p q)
+;;         to (or (not p) q). When seek-in-context is called it looks for q or a contradiction,
+;;         since there is nothing stated in the problem, nothing will be found. This
+;;         would also fail for a simple goal such as (implies (or a b) (or b a)). Or simply,
+;;         (premise (or a b)) (goal (or b a)). "AND" seems to work fine. By introducing a rule
+;;         for (show (or (not p) q)) and if (implies p q) to be true, asserting (or (not p) q)
+;;         should result in mapping the two together.
+;;
+;;         After making the additions, all problems get solved! (finally...)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,6 +57,12 @@
   (run-forms ftre problem)
   (let ((binding-sublis (cadar (fetch '(goal ?x) ftre))))
     (if (fetch binding-sublis) binding-sublis)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Logical Equivalence Rules
+
+(rule ((show (or ?a ?b)) (or ?b ?a))
+      (rassert! (or ?a ?b)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; First, some utilities:
@@ -68,7 +83,6 @@
 ;;;; Implementing the KM* natural deduction system
 ;; We begin by Modus ponens (conditional elimination)
 ;; and its friends.
-
 (rule ((implies ?p ?q) ?p) ;; conditional elimination
       (debug-nd "~%~D: CE: ~A" (ftre-depth *ftre*) ?q)
       (rassert! ?q))
@@ -78,14 +92,18 @@
        (implies ?p ?q))
       (rassert! (show ?p)))
 
+(rule ((show (or (not ?p) ?q)) (implies ?p ?q))
+      (rassert! (or (not ?p) ?q)))
+
 (a-rule ((show (implies ?p ?q)) ;; Conditional Introduction
 	 :test (not (fetch `(implies ,?p ,?q))))
     (debug-nd "~%~D: Trying CI on (implies ~A ~A)."
-	      (ftre-depth *ftre*) ?p ?q)
-    (when (seek-in-context ?p `(or ,?q contradiction))
-      (debug-nd "~%~D: CI: (implies ~A ~A)"
-		(ftre-depth *ftre*) ?p ?q)
-      (rassert! (implies ?p ?q))))
+              (ftre-depth *ftre*) ?p ?q)
+        (when (seek-in-context ?p `(or ,?q contradiction))
+               (debug-nd "~%~D: CI: (implies ~A ~A)"
+                         (ftre-depth *ftre*) ?p ?q)
+               (rassert! (implies ?p ?q))))
+               
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; And elimination and introduction
@@ -111,8 +129,8 @@
 
 (rule ((iff ?p ?q)) ;; IFF elimination
     (debug-nd "~%~D: BE: ~A~%~D: BE: ~A"
-      (ftre-depth *ftre*) `(implies ,?p ,?q)
-      (ftre-depth *ftre*) `(implies ,?q ,?p))
+              (ftre-depth *ftre*) `(implies ,?p ,?q)
+              (ftre-depth *ftre*) `(implies ,?q ,?p))
       (rassert! (implies ?p ?q))
       (rassert! (implies ?q ?p))
       (rassert! (show ?p))
